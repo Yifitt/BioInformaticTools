@@ -1,9 +1,3 @@
-# Python strip() function can be used to remove multiple occurrences of a character or characters which are mistakenly added. 
-# The strip() function removes 
-# leading and trailing whitespaces whereas the strip([characters]) eliminates 
-# leading and trailing characters passed to the strip() function.
-
-
 def readTextFile(filePath):
     with open(filePath, 'r') as f:
         return "".join([l.strip() for l in f.readlines()])
