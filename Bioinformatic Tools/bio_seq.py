@@ -1,4 +1,4 @@
-from Python.myclasses.bio_structure import *
+from bio_structure import *
 import random
 import collections
 import re
