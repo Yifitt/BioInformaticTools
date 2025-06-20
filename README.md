@@ -31,7 +31,9 @@ Clone the repository or copy the `bio_seq` class and utility functions into your
 ## Usage Example
 
 ```python
-from bio_structure import bio_seq, read_FASTA, writeTextFile
+from bio_structure import *
+from bio_seq import *
+from utilities import *
 
 # Create a DNA sequence object
 my_dna = bio_seq("ATGCGTACGTTAG", "DNA", "Example Sequence")
