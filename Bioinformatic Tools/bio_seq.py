@@ -2,6 +2,7 @@ from bio_structure import *
 import random
 import collections
 import re
+import matplotlib.pyplot as plt
 
 class bio_seq:
     """DNA sequence class.Default value: ATCG, DNA, No label"""
@@ -9,7 +10,7 @@ class bio_seq:
         """Sequence initialization, validation."""
         self.seq = seq.upper()
         self.label = label
-        self.seq_type = seq_type
+        self.seq_type = seq_type.upper()
         self.is_valid = self.__validateSeq()
         assert self.is_valid, f"Provided data does not seem to be a correct {self.seq_type} sequence."
 
@@ -28,7 +29,6 @@ class bio_seq:
         """Returns sequence type"""
         return self.seq_type
 
-
     def get_seq_info(self):
         """Returns 4 strings. Full sequence information"""
         return f"[Label]: {self.label}\n[Sequence]: {self.seq}\n[Biotype]: {self.seq_type}\n[Length]: {len(self.seq)}"
@@ -39,21 +39,24 @@ class bio_seq:
                        for x in range(length)])
         self.__init__(seq, seq_type, "Randomly generated sequence")
 
-    def countNucFrequency(self):
+    @property
+    def nucleotide_frequency(self):
         """Count nucleotides in a given sequence. Return a dictionary"""
         return dict(collections.Counter(self.seq))
     
     def transcription(self):
         """DNA -> RNA Transcription.Replacing Thymine with Uracil"""
-        if self.seq_type == "DNA":
-            return self.seq.replace("T", "U")
-        return "Not a DNA sequence"
-    
+        return self.seq.replace("T", "U") if self.seq_type == "DNA" else None
+
+    def backtranscription(self):
+        """RNA -> DNA Replacing Uracil with Thymine"""
+        return self.seq.replace("U", "T") if self.seq_type == "RNA" else None
+
     def reverseComplement(self):
         """Swapping Adenine->Thymine and Guanine->Cytosine.Reversing newly generated string."""
         if self.seq_type == "DNA":
             mapping = str.maketrans('ATCG','TAGC') #bir ceviri tablosu yaratir.Her harfi eslestirir
-        else:
+        elif self.seq_type == "RNA":
             mapping = str.maketrans('AUCG','UAGC')
         return self.seq.translate(mapping)[::-1] #her harfi eslesenle degisir
     
@@ -63,8 +66,9 @@ class bio_seq:
             mapping = str.maketrans('ATCG','TAGC')
         else:
             mapping = str.maketrans('AUCG','UAGC')
-        return self.seq.translate(mapping) 
-    
+        return self.seq.translate(mapping)
+
+    @property
     def gc_content(self):
         """ GC Content in a DNA/RNA sequence"""
         return round((self.seq.count('C') + self.seq.count('G'))/ len(self.seq)*100)
@@ -83,6 +87,8 @@ class bio_seq:
             return[DNA_Codons[self.seq[pos:pos+3]]for pos in range(init_pos,len(self.seq)-2,3)]
         elif self.seq_type == "RNA":
             return[RNA_Codons[self.seq[pos:pos+3]]for pos in range(init_pos,len(self.seq)-2,3)]
+        else:
+           return f"Provided data does not seem to be appropriate sequence."
 
     def codon_usage(self, aminoacid):
         """Provides the frequency of each codon encoding a given aminoacid in a DNA sequence"""
@@ -115,12 +121,14 @@ class bio_seq:
         frames.append(tmp_seq.translate_seq(2))
         del tmp_seq
         return frames
-    
-    def proteins_from_rf(self, aa_seq,):
+
+    @staticmethod
+    def proteins_from_rf(seq):
         """Compute all possible proteins in an aminoacid seq and return a list of possible proteins"""
         current_prot = []
         proteins = []
-        for aa in aa_seq:
+        # aa resembles amino-acid here
+        for aa in seq:
             if aa == "_":
                 # STOP accumulating amino acids if _ - STOP was found
                 if current_prot:
@@ -135,71 +143,54 @@ class bio_seq:
                     current_prot[i] += aa
         return proteins
 
-    def all_proteins_from_orfs(self, startReadPos=0, endReadPos=0, ordered=False,Largest= False):
+
+    def all_proteins_from_orfs(self, start=0, end=0, ordered=False,largest= False):
         """Compute all possible proteins for all open reading frames."""
         """'ordered' and 'Largest' are set to False by default."""
         """'Largest' returns the largest protein in that sequence when it's set to 'True'"""
-               
-        if endReadPos > startReadPos:
+        if end > start:
             tmp_seq = bio_seq(
-                self.seq[startReadPos: endReadPos], self.seq_type)
+                self.seq[start: end], self.seq_type)
             rfs = tmp_seq.gen_reading_frames()
         else:
             rfs = self.gen_reading_frames()
-
         res = []
         for rf in rfs:
             prots = self.proteins_from_rf(rf)
             for p in prots:
                 res.append(p)
-
         if ordered:
-            if Largest:
+            if largest:
                 return sorted(res, key=len, reverse=True)[0]
             return sorted(res, key=len, reverse=True)
         return res
 
-    def find_motif_positions(self,sequence,kmer):
-        """With this function we can find the position of mutations or other kmer start positions"""
+    def find_motif_positions(self,kmer):
+        """Finds the starting positions of given kmer in a sequence.
+        Parameters:
+            kmer (str): The specific k-mer to search for in the sequence.
+        """
+        return[match.start() for match in re.finditer(f'(?=({kmer}))', self.seq)]
 
-        positions = ''
-        
-        for i in range(len(sequence)):
-            if sequence[i] == kmer[0]:
-                if sequence[i:i+len(kmer)] == kmer:
-                    positions += str(i+1)+' '
-        return positions
-        
-    def count_kmer(self,sequence,kmer):
+
+    def count_kmer(self,kmer):
         """
         Counts the number of times a specific k-mer appears in a given sequence,including overlapping k-mers.
             
         Parameters:
-        sequence (str): The DNA sequence to search in.
         kmer (str): The specific k-mer to search for in the sequence.
 
         Returns:
         int: The number of times the k-mer appears in the sequence.
         
         """
-        #return len(re.findall(f'(?=({kmer}))', sequence)) #Kisa yol regular expressions kullaniliyor
-        
-        kmer_count = 0
-        for position in range(len(sequence) - (len(kmer)-1)):
-            print(sequence[position:position+len(kmer)] + "=" + kmer)
-            if sequence[position:position+len(kmer)] == kmer:
-               kmer_count+=1
-        return kmer_count
+        return len(re.findall(f'(?=({kmer}))',self.seq)) #Kisa yol regular expressions kullaniliyor
 
-
-
-        
-    def find_most_frequent_kmers(self, sequence, k_len):
+    def find_most_frequent_kmers(self, k_len):
         """
         Finds the most frequent k-mers of a given length in a DNA string.
 
         Parameters:
-            sequence (str): The DNA string to search.
             k_len (int): The length of the k-mers to search for.
 
         Returns:
@@ -210,8 +201,8 @@ class bio_seq:
 
         # 2. A loop to iterate through the DNA string and exract k-mers of a given length,
         # while also incrementing the frequency of each k-mer
-        for i in range(len(sequence) - k_len + 1):
-            kmer = sequence[i:i+k_len]
+        for i in range(len(self.seq) - k_len + 1):
+            kmer = self.seq[i:i+k_len]
             if kmer in kmer_frequencies:
                 kmer_frequencies[kmer] += 1
             else:
@@ -226,17 +217,51 @@ class bio_seq:
             kmer for kmer, frequency in kmer_frequencies.items()
             if frequency == highest_frequency
         ]
-    
-
-    def calculate_protein_mass(self,sequence):
-        """Calculates the mass of a protein and prints it."""
+    def calculate_protein_mass(self):
+        """Calculates the mass of a protein and returns it.
+         Returns:
+            mass: The rounded mass of the protein.
+            """
         #We assign a mass variable in order to store the mass of the amino-acids
         mass = 0
-
-        for i in sequence:
-            mass += amino_acid_weights[i]
-            
+        if self.seq_type == "PROTEIN":
+            for i in self.seq:
+                mass += amino_acid_weights[i]
+        else:
+            return f"This method is for protein sequences only"
         return round(mass,3)
 
+    def melting_temp(self):
+        """Calculates the melting temperature of a given DNA sequence and returns it."""
+        tm = 0
+        if self.seq_type == "DNA" or self.seq_type == "RNA":
+            A = self.seq.count('A')
+            G = self.seq.count('G')
+            C = self.seq.count('C')
+            if self.seq_type == "DNA":
+                T = self.seq.count('T')
+                tm = 2 * (A + T) + 4 * (G + C)
+            else:
+                U = self.seq.count('U')
+                tm = 2 * (A + U) + 4 * (G + C)
 
-    
+        return tm
+
+    def plot_nuc_frequency(self,bar_direction = "Horizontal"):
+        """Plots nucleotide frequency of a given DNA sequence and plots it using matplotlib bar graph
+        Parameters:
+            bar_direction (str): The direction of bar graph. Defaults to 'Horizontal'.
+            """
+        frequency_dict = self.nucleotide_frequency
+        seq_len = len(self.seq)
+        frequency_list = [(frequency_dict.get(nuc, 0) / seq_len)*100 for nuc in NUCLEOTIDE_BASE["DNA"]]
+
+        fig, ax = plt.subplots()
+        if bar_direction.lower() == "horizontal":
+            ax.barh(NUCLEOTIDE_BASE["DNA"], frequency_list)
+        elif bar_direction.lower() == "vertical":
+            ax.bar(NUCLEOTIDE_BASE["DNA"], frequency_list)
+        ax.set_xlabel('Nucleotides')
+        ax.set_ylabel('Frequency')
+        ax.set_title('Bar Plot')
+        plt.show()
