@@ -102,3 +102,12 @@ writeTextFile("output.txt", my_dna.seq)
 | `calculate_protein_mass()`        | Calculates molecular mass of a protein sequence            |
 | `melting_temp()`                  | Calculates melting temperature of DNA/RNA sequence         |
 | `plot_nuc_frequency(bar_direction)` | Plots nucleotide frequency as bar chart                 |
+
+## File Handling Utilities
+
+| Function                             | Description                                      |
+|------------------------------------|------------------------------------------------|
+| `readTextFile(filePath)`            | Reads sequence data from a plain text file       |
+| `writeTextFile(filePath, seq, mode='w')` | Writes a sequence to a text file (default overwrite mode) |
+| `read_FASTA(filePath)`              | Parses a FASTA file and returns a dictionary `{label: sequence}` |
+
