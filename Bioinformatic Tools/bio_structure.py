@@ -1,11 +1,13 @@
 NUCLEOTIDE_BASE = {
-    "DNA":["A","C","G","T"],
-    "RNA":["A","C","G","U"]
+    "DNA":["A","T","G","C","a","t","g","c"],
+    "RNA":["A","U","G","C","a","u","g","c"],
                    }
+
+AMINOACID_BASE = {"A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y",
+                  "_"}
 
 DNA_Codons = {
     # 'M' = START, '_' = STOP
-
     "GCT": "A", "GCC": "A", "GCA": "A", "GCG": "A", # A = Alanine
     "TGT": "C", "TGC": "C", # C = Cysteine
     "GAT": "D", "GAC": "D", # D = Aspartic Acid
@@ -31,7 +33,6 @@ DNA_Codons = {
 }
 RNA_Codons = {
     # 'M' = START, '_' = STOP
-    
     "GCU": "A", "GCC": "A", "GCA": "A", "GCG": "A",#Alanine
     "UGU": "C", "UGC": "C", #Cysteine
     "GAU": "D", "GAC": "D",#Aspartic Acid
@@ -77,6 +78,21 @@ amino_acid_weights = {
     "V": 99.06841,
     "W": 186.07931,
     "Y": 163.06333
+}
+
+nucleotide_weights = {
+    "A": 313.21,
+    "T": 304.2,
+    "C": 289.18,
+    "G": 329.21,
+}
+
+
+rna_nucleotide_weights = {
+    "A": 329.21,
+    "U": 306.17,
+    "C": 305.18,
+    "G": 345.21,
 }
 
 AminoAcids = {"A", "C", "D", "E", "F", "G", "H", "I", "K", "L", 
